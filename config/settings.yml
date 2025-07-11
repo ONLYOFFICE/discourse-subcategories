@@ -1,0 +1,4 @@
+plugins:
+  onlyoffice_subcategories_enabled:
+    default: true
+    client: true
