@@ -1,6 +1,6 @@
 # name: onlyoffice-discourse-subcategories
 # about: Subcategory grid
-# version: 0.1
+# version: 0.1.1
 # authors: Ascensio System SIA
 
 enabled_site_setting :onlyoffice_subcategories_enabled
