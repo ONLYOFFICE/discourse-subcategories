@@ -7,6 +7,7 @@ export default Component.extend({
   router: service(),
   visible: false,
 
+  topVotedIdeas: [],
   categories: {
     aisuggestions: { link: "", postCount: 0 },
     document_editor: { link: "", postCount: 0 },
@@ -30,6 +31,34 @@ export default Component.extend({
     this._super(...arguments);
     this.router.off("routeDidChange", this._checkRoute);
   },
+  async loadTopVotedIdeas() {
+    try {
+      const response = await fetch(
+        "/trending-ideas/top.json"
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Could not load top-voted topics: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      this.set(
+        "topVotedIdeas",
+        (data.topics || []).map((topic, index) => ({
+          rank: index + 1,
+          title: topic.title,
+          voteCount: topic.vote_count,
+          link: topic.url,
+        }))
+      );
+    } catch (error) {
+      console.error("Could not load top-voted topics:", error);
+      this.set("topVotedIdeas", []);
+    }
+  },
 
   initLinks() {   
     Object.values(this.site.get("categoriesList")).forEach((category) => {
@@ -48,6 +77,11 @@ export default Component.extend({
   _checkRoute() {
     this.initLinks();
     const url = this.router.currentURL;
-    this.set("visible", url === "/c/suggestions/40");
+    const isSuggestionsPage =
+      url === "/c/suggestions/40";
+    this.set("visible", isSuggestionsPage);
+    if (isSuggestionsPage) {
+      this.loadTopVotedIdeas();
+    }
   },
 });
