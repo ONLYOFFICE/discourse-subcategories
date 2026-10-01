@@ -1,6 +1,6 @@
 # name: discourse-subcategories
-# about: Subcategory grid
-# version: 0.2.0
+# about: Subcategory grid; Info about count posts in Suggestions category
+# version: 0.3
 # authors: Ascensio System SIA
 
 enabled_site_setting :onlyoffice_subcategories_enabled
