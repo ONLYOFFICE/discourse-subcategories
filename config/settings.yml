@@ -1,4 +1,16 @@
 plugins:
-  onlyoffice_subcategories_enabled:
+  discourse_subcategories_enabled:
     default: true
     client: true
+
+  discourse_subcategories_subcategory_keys:
+    type: list
+    default: ''
+    client: true
+    description: "Slugs of subcategories to display"
+
+  discourse_subcategories_render_address:
+    type: text
+    default: ''
+    client: true
+    description: "Slug of category in which grid will be rendered"

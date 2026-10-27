@@ -5,22 +5,10 @@ import { bind } from "discourse-common/utils/decorators";
 export default class Subcategories extends Component {
   @service router;
   @service site;
+  @service siteSettings;
 
   visible = false;
-
   topVotedIdeas = [];
-  categories = {
-    aisuggestions: { link: "", postCount: 0 },
-    document_editor: { link: "", postCount: 0 },
-    spreadsheet_editor: { link: "", postCount: 0 },
-    presentation_editor: { link: "", postCount: 0 },
-    pdf_editor: { link: "", postCount: 0 },
-    docspacesuggestions: { link: "", postCount: 0 },
-    mobile: { link: "", postCount: 0 },
-    integrations: { link: "", postCount: 0 },
-    desktop: { link: "", postCount: 0 },
-    macros: { link: "", postCount: 0 },
-  };
 
   init() {
     super.init(...arguments);
@@ -60,25 +48,64 @@ export default class Subcategories extends Component {
     }
   }
 
-  initLinks() {
-    Object.values(this.site.get("categoriesList")).forEach((category) => {
-      const slug = category.slug.replace("-", "_");
+  get renderUrl() {  
+    const renderUrl = this.siteSettings.discourse_subcategories_render_address;
+    return renderUrl;
+  }
 
-      if (this.categories[slug]) {
-        this.categories[slug].link = "/c/suggestions/" + category.slug + "/" + category.id;
-        this.categories[slug].postCount = category.post_count;
-      }
+  get subcategoryKeys() {
+    const configuredKeys = this.siteSettings.discourse_subcategories_subcategory_keys;
+
+    const keys = Array.isArray(configuredKeys)
+      ? configuredKeys
+      : typeof configuredKeys === "string"
+        ? configuredKeys.split("|")
+        : [];
+
+    return keys
+      .map((key) => key.trim())
+      .filter(Boolean);
+  }
+
+  get subcategories() {
+    const categoryUrl = this.renderUrl.split("/").slice(0, 3).join("/");;
+    const categoriesList = this.site.categoriesList;
+    if (!categoriesList) {
+      return [];
+    }
+
+    const bySlug = {};
+
+    Object.values(categoriesList).forEach((subcategory) => {
+      const key = subcategory.slug.replace(/-/g, "_");
+      bySlug[key] = subcategory;
     });
-    return this.categories;
+
+    return this.subcategoryKeys.map((key) => {
+      const normalizedKey = key.replace(/-/g, "_");
+      const subcategory = bySlug[normalizedKey];
+      if (!subcategory) {
+        return null;
+      }
+
+      return {
+        key: normalizedKey,
+        label: subcategory.name,
+        cssClass: `subcategory-${normalizedKey}`,
+        link: categoryUrl + `/${subcategory.slug}/${subcategory.id}`,
+        postCount: subcategory.post_count ?? 0,
+      };
+    })
+    .filter(Boolean);
   }
 
   @bind
   _checkRoute() {
-    this.initLinks();
-    const url = this.router.currentURL;
-    const isSuggestionsPage = url === "/c/suggestions/40";
-    this.set("visible", isSuggestionsPage);
-    if (isSuggestionsPage) {
+    const currentURL = this.router.currentURL;
+    const baseRenderURL = this.renderUrl;
+    const isRenderPage = currentURL === baseRenderURL;
+    this.set("visible", isRenderPage);
+    if (isRenderPage) {
       this.loadTopVotedIdeas();
     }
   }
@@ -91,8 +118,8 @@ export default class Subcategories extends Component {
           <div class="note">
             <div>📋 To submit your suggestion in this section of the community:</div>
             <ol>
-              <li><a href="https://community.onlyoffice.com/login" target="_blank">Log in</a>
-                or <a href="https://community.onlyoffice.com/signup" target="_blank">Sign up</a></li>
+              <li><a href="/login" target="_blank">Log in</a>
+                or <a href="/signup" target="_blank">Sign up</a></li>
               <li>Use <span class="topic_button">new topic</span> button</li>
               <li>Set the title for your suggestion</li>
               <li>Select a category for your suggestion</li>
@@ -118,46 +145,12 @@ export default class Subcategories extends Component {
           </div>
         </div>
         <div class="subcats">
-          <a class="sub_ai" href={{this.categories.aisuggestions.link}}>
-            <h4>AI</h4>
-            <span>{{this.categories.aisuggestions.postCount}}</span>
-          </a>
-          <a class="sub_document_editor" href={{this.categories.document_editor.link}}>
-            <h4>Document Editor</h4>
-            <span>{{this.categories.document_editor.postCount}}</span>
-          </a>
-          <a class="sub_spreadsheet_editor" href={{this.categories.spreadsheet_editor.link}}>
-            <h4>Spreadsheet Editor</h4>
-            <span>{{this.categories.spreadsheet_editor.postCount}}</span>
-          </a>
-          <a class="sub_presentation_editor" href={{this.categories.presentation_editor.link}}>
-            <h4>Presentation Editor</h4>
-            <span>{{this.categories.presentation_editor.postCount}}</span>
-          </a>
-          <a class="sub_pdf" href={{this.categories.pdf_editor.link}}>
-            <h4>PDF Editor</h4>
-            <span>{{this.categories.pdf_editor.postCount}}</span>
-          </a>
-          <a class="sub_docspace" href={{this.categories.docspacesuggestions.link}}>
-            <h4>DocSpace</h4>
-            <span>{{this.categories.docspacesuggestions.postCount}}</span>
-          </a>
-          <a class="sub_mobile" href={{this.categories.mobile.link}}>
-            <h4>Mobile Apps</h4>
-            <span>{{this.categories.mobile.postCount}}</span>
-          </a>
-          <a class="sub_integrations" href={{this.categories.integrations.link}}>
-            <h4>Integrations</h4>
-            <span>{{this.categories.integrations.postCount}}</span>
-          </a>
-          <a class="sub_desktop" href={{this.categories.desktop.link}}>
-            <h4>Desktop Editors</h4>
-            <span>{{this.categories.desktop.postCount}}</span>
-          </a>
-          <a class="sub_macros" href={{this.categories.macros.link}}>
-            <h4>Macros</h4>
-            <span>{{this.categories.macros.postCount}}</span>
-          </a>
+          {{#each this.subcategories as |subcategory|}}
+            <a href={{subcategory.link}} class={{subcategory.cssClass}}>
+              <h4>{{subcategory.label}}</h4>
+              <span>{{subcategory.postCount}}</span>
+            </a>
+          {{/each}}
         </div>
       </div>
     {{/if}}
