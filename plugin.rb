@@ -1,11 +1,11 @@
 # name: discourse-subcategories
 # about: Subcategory grid; Info about count posts in Suggestions category
-# version: 0.3
+# version: 0.4
 # authors: Ascensio System SIA
 
-enabled_site_setting :onlyoffice_subcategories_enabled
+enabled_site_setting :discourse_subcategories_enabled
 
-PLUGIN_NAME ||= "discourse-subcategories".freeze
+PLUGIN_NAME ||= "onlyoffice-discourse-subcategories".freeze
 
 after_initialize do
   require File.expand_path(
